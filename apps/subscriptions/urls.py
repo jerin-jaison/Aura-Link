@@ -1,0 +1,6 @@
+from django.urls import path
+from .views import SubscriptionViewSet
+
+urlpatterns = [
+    path('', SubscriptionViewSet.as_view({'get': 'list'}), name='subscription-detail'),
+]

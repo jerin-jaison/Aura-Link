@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Videos - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-collection-play-fill"></i> My Videos</h2>
+        <div class="btn-group">
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="bi bi-cloud-upload"></i> Upload Video
+            </button>
+            {% if videos %}
+            <a href="{% url 'video_player' videos.0.id %}?loop_all=true" class="btn btn-success">
+                <i class="bi bi-infinity"></i> Play All (Loop)
+            </a>
+            {% endif %}
+            <a href="{% url 'user_dashboard' %}" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            {% if videos %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Size</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in videos %}
+                        <tr>
+                            <td style="width: 120px;">
+                                <div class="ratio ratio-16x9 bg-secondary rounded">
+                                    <i class="bi bi-play-circle m-auto text-white"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">
+                                    {{ video.title }}
+                                    {% if video.uploaded_by_admin %}
+                                    <span class="badge bg-warning text-dark ms-1 small" style="font-size: 0.6em;">Admin
+                                        Uploaded</span>
+                                    {% elif video.is_global %}
+                                    <span class="badge bg-info text-dark ms-1 small"
+                                        style="font-size: 0.6em;">Global</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted">{{ video.duration_minutes }} min • {{ video.format }}
+                                </div>
+                            </td>
+                            <td>{{ video.created_at|date:"M d, Y" }}</td>
+                            <td>{{ video.file_size_mb }} MB</td>
+                            <td>
+                                {% if video.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Archived</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'video_player' video.id %}" class="btn btn-sm btn-outline-light"
+                                        title="Play">
+                                        <i class="bi bi-play-fill"></i>
+                                    </a>
+
+                                    {% if user.is_admin %}
+                                    <!-- Admins can delete any video -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ video.id }}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% elif video.uploaded_by_admin or video.is_global %}
+                                    <!-- Users can only request deletion for admin-uploaded or global videos -->
+                                    <a href="{% url 'request_video_deletion' video.id %}"
+                                        class="btn btn-sm btn-outline-warning" title="Request Deletion">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </a>
+                                    {% elif video.owner == user %}
+                                    <!-- Users can delete their own videos -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ video.id }}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Delete Modal -->
+                                {% if user.is_admin or video.owner == user and not video.uploaded_by_admin and not video.is_global %}
+                                <div class="modal fade" id="deleteModal{{ video.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark border-secondary">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">Delete Video</h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete <strong>{{ video.title }}</strong>? This
+                                                action cannot be undone.
+                                            </div>
+                                            <div class="modal-footer border-secondary">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'delete_video' video.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-camera-video display-1 text-muted mb-3"></i>
+                <h3 class="text-muted">No videos yet</h3>
+                <p class="text-muted">Upload your first video to get started.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Upload Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Video File</label>
+                        <input type="file" name="video_file" class="form-control" accept="video/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Storage</label>
+                        <select name="storage_type" class="form-select">
+                            <option value="LOCAL">Local Storage</option>
+                            {% if user.plan.cloud_upload_allowed %}
+                            <option value="CLOUD">Cloud Storage</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="uploadProgressContainer">
+                        <label class="form-label">Uploading...</label>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                style="width: 0%">0%</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="uploadBtn">
+                        <i class="bi bi-cloud-upload"></i> Upload
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/upload.js' %}?v=1.1"></script>
+{% endblock %}

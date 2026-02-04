@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage User Videos - {{ target_user.email }} - Aura Link Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-collection-play"></i> Manage Cloud Videos</h2>
+            <p class="text-muted mb-0">User: {{ target_user.email }}</p>
+        </div>
+        <a href="{% url 'admin_users' %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Back to Users
+        </a>
+    </div>
+
+    <!-- User Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary h-100">
+                <div class="card-body">
+                    <h6>Total Videos</h6>
+                    <h3>{{ cloud_videos.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success h-100">
+                <div class="card-body">
+                    <h6>Total Storage</h6>
+                    <h3>{{ total_storage|filesizeformat }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-dark h-100">
+                <div class="card-body">
+                    <h6>Plan</h6>
+                    <h3>{{ target_user.plan.name }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h6>Active Videos</h6>
+                    <h3>{{ active_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Videos Table -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Cloud Videos</h5>
+            <span class="text-muted">Storage Type: CLOUD</span>
+        </div>
+        <div class="card-body">
+            {% if cloud_videos %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Video</th>
+                            <th>Size</th>
+                            <th>Duration</th>
+                            <th>Upload Date</th>
+                            <th>Status</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in cloud_videos %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">
+                                    {{ video.title }}
+                                    {% if video.uploaded_by_admin %}
+                                    <span class="badge bg-warning text-dark ms-1 small" style="font-size: 0.6em;">
+                                        Admin Uploaded
+                                    </span>
+                                    {% elif video.is_global %}
+                                    <span class="badge bg-info text-dark ms-1 small" style="font-size: 0.6em;">
+                                        Global
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted">{{ video.format|upper }}</div>
+                            </td>
+                            <td>{{ video.file_size_mb }} MB</td>
+                            <td>{{ video.duration_minutes }} min</td>
+                            <td>{{ video.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if video.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Archived</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if video.is_global %}
+                                <span class="badge bg-primary">Global</span>
+                                {% else %}
+                                <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'video_player' video.id %}" class="btn btn-sm btn-outline-light"
+                                        title="Play" target="_blank">
+                                        <i class="bi bi-play-fill"></i>
+                                    </a>
+
+                                    <!-- Toggle Active Status -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
+                                        data-bs-target="#toggleModal{{ video.id }}"
+                                        title="{% if video.is_active %}Archive{% else %}Activate{% endif %}">
+                                        <i
+                                            class="bi {% if video.is_active %}bi-archive{% else %}bi-arrow-clockwise{% endif %}"></i>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ video.id }}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Toggle Active Modal -->
+                                <div class="modal fade" id="toggleModal{{ video.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark border-secondary">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">
+                                                    {% if video.is_active %}Archive{% else %}Activate{% endif %} Video
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to {% if video.is_active %}archive{% else
+                                                %}activate{% endif %}
+                                                <strong>{{ video.title }}</strong>?
+                                            </div>
+                                            <div class="modal-footer border-secondary">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <form
+                                                    action="{% url 'admin_toggle_user_video' target_user.id video.id %}"
+                                                    method="post" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-warning">
+                                                        {% if video.is_active %}Archive{% else %}Activate{% endif %}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Delete Modal -->
+                                <div class="modal fade" id="deleteModal{{ video.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark border-secondary">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">Delete Video</h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="alert alert-danger">
+                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                    <strong>Warning:</strong> This will permanently delete the video
+                                                    from cloud storage.
+                                                </div>
+                                                <p>Are you sure you want to delete <strong>{{ video.title }}</strong>?
+                                                </p>
+                                                <div class="small text-muted">
+                                                    Size: {{ video.file_size_mb }} MB | Duration: {{
+                                                    video.duration_minutes }} min
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-secondary">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <form
+                                                    action="{% url 'admin_delete_user_video' target_user.id video.id %}"
+                                                    method="post" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-trash"></i> Delete Permanently
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                <h3 class="text-muted">No Cloud Videos Found</h3>
+                <p class="text-muted">This user has no videos stored in cloud storage.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

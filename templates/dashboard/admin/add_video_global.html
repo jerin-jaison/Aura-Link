@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Global Video - Aura Link Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-globe"></i> Upload Global Video</h5>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-outline-light">Back to Dashboard</a>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> This video will be visible to <strong>ALL</strong> users in
+                        their dashboard.
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Video Title</label>
+                            <input type="text" name="title" class="form-control" required
+                                placeholder="e.g. Welcome to Aura Link">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video File</label>
+                            <input type="file" name="video_file" class="form-control" accept="video/*" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Storage Location</label>
+                            <select name="storage_type" class="form-select">
+                                <option value="LOCAL">Local Storage</option>
+                                <option value="CLOUD">Cloud Storage (S3)</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-cloud-upload"></i> Upload Global Video
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

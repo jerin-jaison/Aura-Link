@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center py-5">
+        <div class="col-md-5">
+            <div class="card bg-dark border-danger shadow-lg">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <h4 class="mb-0"><i class="bi bi-shield-lock"></i> Admin Portal</h4>
+                </div>
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-badge display-1 text-danger"></i>
+                        <p class="text-muted mt-2">Restricted Access</p>
+                    </div>
+
+                    <!-- Messages -->
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Email or Username</label>
+                            <input type="text" name="username" class="form-control" placeholder="Admin credentials"
+                                required autofocus>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="Admin password"
+                                required>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100 mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i> Login to Admin Console
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <p class="text-center text-muted mb-0">
+                        <a href="{% url 'login' %}" class="text-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to User Login
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

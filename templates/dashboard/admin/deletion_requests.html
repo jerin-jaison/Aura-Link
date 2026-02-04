@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Deletion Requests - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-trash"></i> Video Deletion Requests</h2>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="mb-4">
+        <div class="btn-group" role="group">
+            <a href="?status=PENDING"
+                class="btn btn-{% if status_filter == 'PENDING' %}primary{% else %}outline-primary{% endif %}">
+                <i class="bi bi-clock"></i> Pending
+            </a>
+            <a href="?status=APPROVED"
+                class="btn btn-{% if status_filter == 'APPROVED' %}success{% else %}outline-success{% endif %}">
+                <i class="bi bi-check-circle"></i> Approved
+            </a>
+            <a href="?status=REJECTED"
+                class="btn btn-{% if status_filter == 'REJECTED' %}danger{% else %}outline-danger{% endif %}">
+                <i class="bi bi-x-circle"></i> Rejected
+            </a>
+            <a href="?status=ALL"
+                class="btn btn-{% if status_filter == 'ALL' %}secondary{% else %}outline-secondary{% endif %}">
+                <i class="bi bi-list"></i> All
+            </a>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            {% if deletion_requests %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Video</th>
+                            <th>Requested By</th>
+                            <th>Reason</th>
+                            <th>Requested On</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in deletion_requests %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ request.video.title }}</div>
+                                <div class="small text-muted">
+                                    {{ request.video.file_size_mb }} MB • {{ request.video.duration_minutes }} min
+                                </div>
+                            </td>
+                            <td>
+                                <div>{{ request.requested_by.email }}</div>
+                                <div class="small text-muted">{{ request.requested_by.username }}</div>
+                            </td>
+                            <td>
+                                {% if request.reason %}
+                                <small>{{ request.reason|truncatewords:15 }}</small>
+                                {% else %}
+                                <span class="text-muted">No reason provided</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request.requested_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if request.status == 'PENDING' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif request.status == 'APPROVED' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif request.status == 'REJECTED' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.status == 'PENDING' %}
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                        data-bs-target="#approveModal{{ request.id }}" title="Approve">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                                        data-bs-target="#rejectModal{{ request.id }}" title="Reject">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Approve Modal -->
+                                <div class="modal fade" id="approveModal{{ request.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark border-secondary">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">Approve Deletion Request</h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to approve this deletion request?</p>
+                                                <div class="alert alert-warning">
+                                                    <strong>Warning:</strong> This will permanently delete the video
+                                                    <strong>{{ request.video.title }}</strong>.
+                                                </div>
+                                                <p><strong>Requested by:</strong> {{ request.requested_by.email }}</p>
+                                                {% if request.reason %}
+                                                <p><strong>Reason:</strong> {{ request.reason }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer border-secondary">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'admin_approve_deletion' request.id %}"
+                                                    method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-success">Approve &
+                                                        Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reject Modal -->
+                                <div class="modal fade" id="rejectModal{{ request.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark border-secondary">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">Reject Deletion Request</h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form action="{% url 'admin_reject_deletion' request.id %}" method="post">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to reject this deletion request?</p>
+                                                    <p><strong>Video:</strong> {{ request.video.title }}</p>
+                                                    <p><strong>Requested by:</strong> {{ request.requested_by.email }}
+                                                    </p>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Admin Notes (optional)</label>
+                                                        <textarea name="admin_notes" class="form-control" rows="3"
+                                                            placeholder="Provide a reason for rejection..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-secondary">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-danger">Reject Request</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">
+                                    {% if request.resolved_by %}
+                                    Resolved by {{ request.resolved_by.email }}
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                <h3 class="text-muted">No deletion requests found</h3>
+                <p class="text-muted">
+                    {% if status_filter == 'PENDING' %}
+                    There are no pending deletion requests at this time.
+                    {% else %}
+                    Try changing the filter to view requests.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

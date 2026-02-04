@@ -1,0 +1,46 @@
+/* Aura Link Custom Styles */
+
+:root {
+    --bs-body-bg: #0d1117;
+    --bs-dark-bg-subtle: #161b22;
+}
+
+body {
+    background-color: var(--bs-body-bg);
+    min-height: 100vh;
+}
+
+.navbar {
+    backdrop-filter: blur(10px);
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn {
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Video Grid */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+/* Upload Progress */
+.upload-progress {
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6610f2);
+    transition: width 0.3s;
+}

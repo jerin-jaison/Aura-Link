@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center py-5">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">
+                        <i class="bi bi-person-plus-fill text-primary"></i><br>
+                        Create Your Account
+                    </h2>
+
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control"
+                                placeholder="Choose a unique username" pattern="[a-zA-Z0-9_-]{3,30}"
+                                title="Username must be 3-30 characters (letters, numbers, - and _ only)" required
+                                autofocus>
+                            <small class="form-text text-muted">3-30 characters, letters, numbers, - and _ only</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="your@email.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password" class="form-control"
+                                placeholder="Enter a strong password" minlength="8" required>
+                            <small class="form-text text-muted">Minimum 8 characters</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password_confirm" class="form-control"
+                                placeholder="Re-enter your password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>What you get:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Free plan with 5 videos</li>
+                                    <li>100MB per video</li>
+                                    <li>500MB total storage</li>
+                                    <li>Upgrade to Premium anytime!</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-person-plus"></i> Create Account
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <p class="text-center text-muted mb-0">
+                        Already have an account?
+                        <a href="{% url 'login' %}" class="text-primary">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+            <p class="text-muted">Welcome back, {{ user.email }}</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Current Plan</h6>
+                    <h3>{{ user.plan.name }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h6>Total Videos</h6>
+                    <h3>{{ videos.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h6>Storage Used</h6>
+                    <h3>{{ total_storage|filesizeformat }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-end">
+                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-cloud-upload"></i> Upload Video
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Grid -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-collection-play"></i> My Videos</h5>
+            <a href="{% url 'manage_videos' %}" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-list-ul"></i> View All
+            </a>
+        </div>
+        <div class="card-body">
+            {% if videos %}
+            <div class="row g-3">
+                {% for video in videos %}
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6 class="card-title text-truncate" title="{{ video.title }}">
+                                {{ video.title }}
+                                {% if video.is_global or video.owner.is_admin %}
+                                <i class="bi bi-patch-check-fill text-info small" title="Uploaded by Admin"></i>
+                                {% endif %}
+                            </h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-file-earmark-play"></i> {{ video.file_size_mb }}MB
+                                <span class="ms-2"><i class="bi bi-clock"></i> {{ video.duration_minutes }}min</span>
+                            </p>
+                            <span class="badge bg-info">{{ video.format }}</span>
+                            <span class="badge bg-success">{{ video.storage_type }}</span>
+
+                            <div class="mt-3">
+                                <a href="{% url 'video_player' video.id %}"
+                                    class="btn btn-sm btn-outline-primary w-100">
+                                    <i class="bi bi-play-fill"></i> Watch Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox display-1"></i>
+                <p>No videos yet. Upload your first video!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Upload Video</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Video File</label>
+                        <input type="file" name="video_file" class="form-control" accept="video/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Storage</label>
+                        <select name="storage_type" class="form-select">
+                            <option value="LOCAL">Local Storage</option>
+                            {% if user.plan.cloud_upload_allowed %}
+                            <option value="CLOUD">Cloud Storage</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="uploadProgressContainer">
+                        <label class="form-label">Uploading...</label>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                style="width: 0%">0%</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="uploadBtn">
+                        <i class="bi bi-cloud-upload"></i> Upload
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/upload.js' %}?v=1.1"></script>
+{% endblock %}

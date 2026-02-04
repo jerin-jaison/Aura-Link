@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Watching: {{ video.title }} - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0 bg-black min-vh-100 d-flex flex-column" id="player-container">
+    <!-- Player Control Bar (Top) -->
+    <div class="d-flex justify-content-between align-items-center p-3 text-white bg-dark bg-opacity-75"
+        style="z-index: 10;">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="btn btn-outline-light me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h5 class="mb-0 text-truncate" style="max-width: 300px;">
+                    {{ video.title }}
+                    {% if video.is_global or video.owner.is_admin %}
+                    <span class="badge bg-info text-dark ms-2 small" title="Uploaded by Admin"><i
+                            class="bi bi-patch-check-fill"></i> Admin</span>
+                    {% endif %}
+                </h5>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch text-white">
+                <input class="form-check-input" type="checkbox" id="loop-single">
+                <label class="form-check-label small" for="loop-single">Loop One</label>
+            </div>
+
+            {% if is_loop_all %}
+            <div class="badge bg-success animate-pulse">
+                <i class="bi bi-infinity"></i> Auto-Play Active
+            </div>
+            {% endif %}
+
+            <a href="{% url 'manage_videos' %}" id="exit-loop-btn" class="btn btn-danger d-none">
+                <i class="bi bi-x-lg"></i> Exit Loop
+            </a>
+
+            <button id="fullscreen-btn" class="btn btn-primary" onclick="toggleFullScreen()">
+                <i class="bi bi-arrows-fullscreen"></i> TV Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Video Player -->
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center bg-black">
+        <video id="main-player" controls autoplay class="w-100 h-100" style="max-height: 90vh; object-fit: contain;">
+            <source src="{{ video.get_file_url }}" type="video/{{ video.format }}">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</div>
+
+<script>
+    const playerContainer = document.getElementById('player-container');
+    const player = document.getElementById('main-player');
+    const btn = document.getElementById('fullscreen-btn');
+    const loopSingleCheck = document.getElementById('loop-single');
+    const titleElement = document.querySelector('h5.mb-0');
+
+    // Playlist Logic
+    const isLoopAll = {{ is_loop_all| lower }};
+    const playlist = {{ playlist_json| safe }};
+    const currentVideoId = "{{ video.id }}";
+
+    let currentIndex = playlist.findIndex(v => v.id === currentVideoId);
+    if (currentIndex === -1) currentIndex = 0; // Fallback
+
+    // Add Exit Button if in Loop Mode
+    if (isLoopAll) {
+        document.getElementById('exit-loop-btn').classList.remove('d-none');
+    }
+
+    // Single Loop Toggle
+    loopSingleCheck.addEventListener('change', (e) => {
+        player.loop = e.target.checked;
+    });
+
+    // Auto-Navigation for Loop All (SPA Style)
+    player.addEventListener('ended', () => {
+        if (!player.loop && isLoopAll && playlist.length > 0) {
+            console.log("Video ended, playing next...");
+
+            // Calculate next index
+            currentIndex = (currentIndex + 1) % playlist.length;
+            const nextVideo = playlist[currentIndex];
+
+            // Update Source
+            player.src = nextVideo.url;
+            player.type = `video/${nextVideo.format}`;
+            player.load();
+            player.play();
+
+            // Update Title
+            let adminBadge = '';
+            if (nextVideo.is_admin) {
+                adminBadge = '<span class="badge bg-info text-dark ms-2 small"><i class="bi bi-patch-check-fill"></i> Admin</span>';
+            }
+            titleElement.innerHTML = `${nextVideo.title} ${adminBadge}`;
+
+            // Update URL bar without reload (optional, for history)
+            // window.history.pushState({}, '', `/dashboard/video/${nextVideo.id}/?loop_all=true`);
+        }
+    });
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            playerContainer.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+            btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> Exit TV Mode';
+            playerContainer.classList.add('justify-content-center');
+        } else {
+            btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> TV Mode';
+        }
+    });
+
+    // Keyboard shortcuts for TV remote emulation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'f' || e.key === 'F') {
+            toggleFullScreen();
+        }
+        if (e.key === 'Escape') {
+            if (document.fullscreenElement) document.exitFullscreen();
+        }
+    });
+</script>
+
+<style>
+    /* Hide scrollbar when in TV mode */
+    body.fullscreen-mode {
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

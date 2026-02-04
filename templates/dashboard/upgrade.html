@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Upgrade to Premium - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+            Choose Your Power Level
+        </h1>
+        <p class="lead text-secondary">Unlock the full potential of Aura Link with our Premium plan.</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 mb-3 text-center justify-content-center">
+        <!-- Free Plan -->
+        <div class="col">
+            <div class="card mb-4 rounded-3 shadow-sm bg-dark border-secondary">
+                <div class="card-header py-3 border-secondary">
+                    <h4 class="my-0 fw-normal">Free</h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title">$0<small class="text-muted fw-light">/mo</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li><i class="bi bi-check2 text-success"></i> 500 MB Storage</li>
+                        <li><i class="bi bi-check2 text-success"></i> Local Uploads Only</li>
+                        <li><i class="bi bi-check2 text-success"></i> 720p Playback</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> No Cloud Storage</li>
+                    </ul>
+                    <button type="button" class="btn btn-lg btn-outline-light w-100" disabled>Current Plan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="col">
+            <div class="card mb-4 rounded-3 shadow border-primary">
+                <div class="card-header py-3 text-white bg-primary border-primary">
+                    <h4 class="my-0 fw-normal">Premium</h4>
+                </div>
+                <div class="card-body bg-dark">
+                    <h1 class="card-title pricing-card-title text-white">$29<small
+                            class="text-muted fw-light">/mo</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-white">
+                        <li><i class="bi bi-check2-circle text-primary"></i> 50 GB Storage</li>
+                        <li><i class="bi bi-check2-circle text-primary"></i> Cloud Uploads (S3)</li>
+                        <li><i class="bi bi-check2-circle text-primary"></i> 4K Playback Support</li>
+                        <li><i class="bi bi-check2-circle text-primary"></i> Priority Support</li>
+                    </ul>
+                    <form action="{% url 'process_payment' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-lg btn-primary w-100">
+                            <i class="bi bi-lightning-charge-fill"></i> Upgrade Now
+                        </button>
+                    </form>
+                    <p class="mt-2 text-muted small">Instant activation. No credit card required (Demo).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
