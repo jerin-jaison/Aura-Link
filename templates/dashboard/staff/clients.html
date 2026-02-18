@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Clients - Staff Portal{% endblock %}
+
+{% block navbar %}
+{% include 'partials/staff_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-people-fill text-primary"></i> Client Devices</h2>
+            <p class="text-muted">Manage your connected client devices</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ clients_count }}</h3>
+                    <p class="text-muted mb-0">Total Clients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ online_count }}</h3>
+                    <p class="text-muted mb-0">Online Now</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body text-center">
+                    <h3>{{ offline_count }}</h3>
+                    <p class="text-muted mb-0">Offline</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Client Devices</h5>
+
+            {% if clients %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Device Name</th>
+                            <th>Status</th>
+                            <th>Access Code</th>
+                            <th>Last Seen</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td>
+                                <i class="bi bi-tv"></i>
+                                <strong>{{ client.device_name }}</strong>
+                            </td>
+                            <td>
+                                {% if client.is_online %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-circle-fill"></i> Online
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-circle"></i> Offline
+                                </span>
+                                {% endif %}
+                                {% if not client.is_active %}
+                                <span class="badge bg-danger ms-1">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if client.access_code %}
+                                <code class="text-warning">{{ client.access_code.code }}</code>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if client.last_seen %}
+                                <span title="{{ client.last_seen }}">
+                                    {{ client.last_seen|timesince }} ago
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Never</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ client.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#editClientModal{{ client.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <form method="post" action="{% url 'toggle_client' client.id %}"
+                                    style="display: inline;">
+                                    {% csrf_token %}
+                                    {% if client.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Deactivate this client?')">
+                                        <i class="bi bi-x-circle"></i> Deactivate
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-check-circle"></i> Activate
+                                    </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Client Modal -->
+                        <div class="modal fade" id="editClientModal{{ client.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content bg-dark">
+                                    <div class="modal-header border-secondary">
+                                        <h5 class="modal-title">Edit Client Device</h5>
+                                        <button type="button" class="btn-close btn-close-white"
+                                            data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'edit_client' client.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Device Name</label>
+                                                <input type="text" name="device_name" class="form-control"
+                                                    value="{{ client.device_name }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-secondary">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-save"></i> Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                No client devices connected yet. Generate an access code to get started.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

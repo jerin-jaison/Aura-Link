@@ -18,6 +18,9 @@ urlpatterns = [
     # Web Authentication (Session-based)
     path('auth/web/', include('apps.accounts.urls.web_auth')),
     
+    # Staff & Client Dashboards
+    path('', include('apps.accounts.urls.dashboards')),
+    
     # API v1
     path('api/v1/', include([
         # JWT Authentication for mobile/TV
@@ -29,6 +32,9 @@ urlpatterns = [
         path('videos/', include('apps.videos.urls')),
         path('subscriptions/', include('apps.subscriptions.urls')),
     ])),
+    
+    # Client API (for TV/Kiosk devices)
+    path('api/client/', include('apps.accounts.urls.client_api')),
     
     # Dashboard (Web views)
     path('', include('apps.dashboard.urls')),

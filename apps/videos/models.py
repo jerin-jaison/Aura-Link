@@ -39,6 +39,13 @@ class Video(models.Model):
     format = models.CharField(max_length=10, choices=FORMAT_CHOICES, default='mp4')
     thumbnail_url = models.URLField(max_length=1000, blank=True)
     
+    # Display settings
+    rotation = models.IntegerField(
+        default=0,
+        choices=[(0, '0°'), (90, '90°'), (180, '180°'), (270, '270°')],
+        help_text='Video rotation angle for display'
+    )
+    
     # Status
     is_active = models.BooleanField(default=True)
     is_global = models.BooleanField(default=False, help_text="Visible to all users")
@@ -89,3 +96,77 @@ class Video(models.Model):
     def requires_deletion_approval(self):
         """Check if this video requires admin approval for deletion."""
         return self.uploaded_by_admin or self.is_global
+
+
+# ============================================================================
+# Staff Video Assignment Model
+# ============================================================================
+
+class StaffVideoAssignment(models.Model):
+    """Maps staff-uploaded videos to client devices."""
+    
+    video = models.ForeignKey(
+        'Video',
+        on_delete=models.CASCADE,
+        related_name='staff_assignments'
+    )
+    
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='video_assignments',
+        limit_choices_to={'user_type': 'STAFF'}
+    )
+    
+    # Assignment scope
+    assigned_to = models.ForeignKey(
+        'accounts.ClientAccount',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='video_assignments',
+        help_text="Specific client. NULL if global for all staff clients"
+    )
+    
+    is_global_for_staff = models.BooleanField(
+        default=False,
+        help_text="Show to all clients of this staff"
+    )
+    
+    # Playback settings
+    play_order = models.IntegerField(default=0, help_text="Order in playlist (lower plays first)")
+    loop_enabled = models.BooleanField(default=True, help_text="Loop this video")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'staff_video_assignments'
+        verbose_name = 'Staff Video Assignment'
+        verbose_name_plural = 'Staff Video Assignments'
+        ordering = ['play_order', '-created_at']
+        indexes = [
+            models.Index(fields=['staff', 'play_order']),
+            models.Index(fields=['assigned_to', 'play_order']),
+        ]
+        # Prevent duplicate assignments
+        unique_together = [['video', 'assigned_to']]
+    
+    def __str__(self):
+        if self.assigned_to:
+            return f"{self.video.title} → {self.assigned_to.device_name}"
+        elif self.is_global_for_staff:
+            return f"{self.video.title} → All clients of {self.staff.email}"
+        return f"{self.video.title} (Unassigned)"
+    
+    def save(self, *args, **kwargs):
+        # Ensure video owner is the staff member
+        if self.video.owner != self.staff:
+            raise ValueError("Video must be owned by the staff member")
+        
+        # If global, assigned_to must be NULL
+        if self.is_global_for_staff and self.assigned_to:
+            raise ValueError("Global assignments cannot target specific clients")
+        
+        super().save(*args, **kwargs)

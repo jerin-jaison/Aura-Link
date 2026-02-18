@@ -17,7 +17,9 @@
 </head>
 
 <body>
+    {% block navbar %}
     {% include 'partials/navbar.html' %}
+    {% endblock %}
 
     <!-- Hidden Django Messages (will be converted to toast notifications by JS) -->
     <div class="django-messages" style="display: none;">

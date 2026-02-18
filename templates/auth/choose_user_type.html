@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Choose Account Type - Aura Link{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center py-5">
+        <div class="col-md-8">
+            <div class="text-center mb-4">
+                <h2>Welcome, {{ user.username }}!</h2>
+                <p class="text-muted">Choose how you'd like to use Aura Link</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Regular User Option -->
+                <div class="col-md-6">
+                    <div class="card bg-dark border-secondary h-100">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-person-circle display-3 text-primary"></i>
+                            </div>
+                            <h4 class="card-title text-center mb-3">Regular User</h4>
+                            <p class="card-text text-muted flex-grow-1">
+                                Upload and manage your personal videos. Perfect for individual use.
+                            </p>
+                            <ul class="text-muted mb-4">
+                                <li>Upload your own videos</li>
+                                <li>Create playlists</li>
+                                <li>Access from any device</li>
+                            </ul>
+                            <form method="post" action="{% url 'set_user_type' %}" class="mt-auto">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_type" value="REGULAR">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-check-circle"></i> Continue as Regular User
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Staff/Business Option -->
+                <div class="col-md-6">
+                    <div class="card bg-dark border-warning h-100">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-briefcase-fill display-3 text-warning"></i>
+                            </div>
+                            <h4 class="card-title text-center mb-3">
+                                Staff / Business
+                                <span class="badge bg-warning text-dark ms-2">New</span>
+                            </h4>
+                            <p class="card-text text-muted flex-grow-1">
+                                Manage video content for multiple client devices. Ideal for businesses and advertisers.
+                            </p>
+                            <ul class="text-muted mb-4">
+                                <li>Generate access codes for clients</li>
+                                <li>Manage content for multiple TVs</li>
+                                <li>Control playback remotely</li>
+                                <li>Cloud storage included</li>
+                            </ul>
+                            <form method="post" action="{% url 'set_user_type' %}" class="mt-auto">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_type" value="STAFF">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-star-fill"></i> Become a Staff Member
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    <small>You can change this later in your account settings</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

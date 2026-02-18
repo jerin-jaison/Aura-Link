@@ -19,15 +19,37 @@
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label class="form-label">Email or Username</label>
+                            <label class="form-label">Username or Mobile Number</label>
                             <input type="text" name="username" class="form-control"
-                                placeholder="Enter your email or username" required autofocus>
+                                placeholder="Enter your username or mobile number" required autofocus>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label">Password</label>
                             <input type="password" name="password" class="form-control"
                                 placeholder="Enter your password" required>
+                        </div>
+
+                        <!-- Optional Access Code Section -->
+                        <div class="mb-3">
+                            <div class="d-grid">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#codeSection" aria-expanded="false" aria-controls="codeSection">
+                                    <i class="bi bi-key"></i> Have an Access Code?
+                                </button>
+                            </div>
+                            <div class="collapse mt-2" id="codeSection">
+                                <label class="form-label text-muted">
+                                    <small>Access Code (Optional - For Client Devices)</small>
+                                </label>
+                                <input type="text" name="access_code" class="form-control"
+                                    placeholder="Enter 8-character code" maxlength="8"
+                                    style="text-transform: uppercase;">
+                                <small class="form-text text-muted">
+                                    If you received a code from a staff member, enter it here to access their video
+                                    content.
+                                </small>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100 mb-3">

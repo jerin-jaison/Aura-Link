@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Video - Staff Portal{% endblock %}
+
+{% block navbar %}
+{% include 'partials/staff_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-link-45deg text-primary"></i> Assign Video</h2>
+            <p class="text-muted">Choose which clients can access this video</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-play-circle text-primary"></i> {{ video.title }}
+                    </h5>
+                    <p class="card-text text-muted">
+                        <span class="badge bg-secondary me-2">{{ video.get_rotation_display }}</span>
+                        <span class="badge bg-info me-2">{{ video.duration }} sec</span>
+                        <span class="badge bg-success">{{ video.format|upper }}</span>
+                    </p>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Global Assignment -->
+                <div class="card bg-dark border-warning mb-3">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="assignment_type" value="global"
+                                id="globalAssignment">
+                            <label class="form-check-label" for="globalAssignment">
+                                <h5><i class="bi bi-broadcast text-warning"></i> Assign to All Clients</h5>
+                                <p class="text-muted mb-0">
+                                    This video will be shown to all your current and future client devices.
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specific Assignment -->
+                <div class="card bg-dark border-primary mb-4">
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="assignment_type" value="specific"
+                                id="specificAssignment" checked>
+                            <label class="form-check-label" for="specificAssignment">
+                                <h5><i class="bi bi-people text-primary"></i> Assign to Specific Clients</h5>
+                                <p class="text-muted mb-0">
+                                    Select which client devices should display this video.
+                                </p>
+                            </label>
+                        </div>
+
+                        <div id="clientSelection">
+                            {% if clients %}
+                            {% for client in clients %}
+                            <div class="form-check mb-2">
+                                {% if client.id in existing_assignments %}
+                                <input class="form-check-input" type="checkbox" name="clients" value="{{ client.id }}"
+                                    id="client{{ client.id }}" checked>
+                                {% else %}
+                                <input class="form-check-input" type="checkbox" name="clients" value="{{ client.id }}"
+                                    id="client{{ client.id }}">
+                                {% endif %}
+                                <label class="form-check-label" for="client{{ client.id }}">
+                                    <i class="bi bi-tv"></i> {{ client.device_name }}
+                                    {% if client.is_online %}
+                                    <span class="badge bg-success ms-2">Online</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary ms-2">Offline</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                No active clients available. Generate an access code first.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Assignment
+                    </button>
+                    <a href="{% url 'staff_videos' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-dark border-info">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-info-circle text-info"></i> Assignment Tips</h6>
+                    <ul class="text-muted small mb-0">
+                        <li class="mb-2">Global assignment shows video to all clients automatically</li>
+                        <li class="mb-2">Specific assignment gives you more control</li>
+                        <li class="mb-2">You can change assignments anytime</li>
+                        <li>Clients see videos in playlist order</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

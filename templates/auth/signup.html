@@ -32,6 +32,16 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-secondary border-secondary text-light">+91</span>
+                                <input type="tel" name="mobile_number" class="form-control" placeholder="9876543210"
+                                    pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number" required>
+                            </div>
+                            <small class="form-text text-muted">A verification code will be sent to this number.</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label">Password <span class="text-danger">*</span></label>
                             <input type="password" name="password" class="form-control"
                                 placeholder="Enter a strong password" minlength="8" required>

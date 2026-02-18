@@ -162,6 +162,132 @@ def admin_user_change_plan(request, user_id):
 
 @never_cache
 @login_required
+def admin_user_toggle_staff(request, user_id):
+    """Toggle user staff status (Promote/Demote to Staff)."""
+    if not request.user.is_admin:
+        messages.error(request, "You do not have permission to access the admin panel.")
+        return redirect('user_dashboard')
+        
+    user = get_object_or_404(User, id=user_id)
+    
+    # Prevent admin from demoting themselves if they're staff
+    if user.id == request.user.id and user.user_type == 'STAFF':
+        messages.error(request, "You cannot demote your own staff account.")
+        return redirect('admin_users')
+    
+    # Toggle between REGULAR and STAFF
+    if user.user_type == 'STAFF':
+        # Demote from staff
+        user.user_type = 'REGULAR'
+        user.save()
+        messages.success(request, f'User "{user.email}" demoted from Staff to Regular user.')
+        action = "demoted from Staff"
+    else:
+        # Promote to staff
+        user.user_type = 'STAFF'
+        user.save()
+        
+        # Create staff profile if doesn't exist
+        from apps.accounts.models import StaffProfile
+        StaffProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                'max_clients': 2,
+                'max_storage_gb': 5,
+                'can_use_cloud': False
+            }
+        )
+        messages.success(request, f'User "{user.email}" promoted to Staff member.')
+        action = "promoted to Staff"
+    
+    # Log action
+    AdminActionLog.objects.create(
+        admin=request.user,
+        action_type="USER_TYPE_CHANGED",
+        target_model="User",
+        target_id=str(user.id),
+        description=f"User {action}"
+    )
+    
+    return redirect('admin_users')
+
+
+@never_cache
+@login_required
+def admin_user_change_staff_plan(request, user_id):
+    """Change staff user's plan tier (Free/Basic/Pro)."""
+    if not request.user.is_admin:
+        messages.error(request, "You do not have permission to access the admin panel.")
+        return redirect('user_dashboard')
+        
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        
+        # Check if user is staff
+        if user.user_type != 'STAFF':
+            messages.error(request, 'User must be a staff member to change staff plans.')
+            return redirect('admin_users')
+        
+        plan_tier = request.POST.get('plan_tier')
+        
+        try:
+            from apps.accounts.models import StaffProfile
+            staff_profile = get_object_or_404(StaffProfile, user=user)
+            
+            # Define plan limits
+            plan_configs = {
+                'free': {
+                    'max_clients': 2,
+                    'max_storage_gb': 5,
+                    'can_use_cloud': False,
+                    'display_name': 'Staff Free'
+                },
+                'basic': {
+                    'max_clients': 10,
+                    'max_storage_gb': 50,
+                    'can_use_cloud': True,
+                    'display_name': 'Staff Basic'
+                },
+                'pro': {
+                    'max_clients': 50,
+                    'max_storage_gb': 200,
+                    'can_use_cloud': True,
+                    'display_name': 'Staff Pro'
+                }
+            }
+            
+            if plan_tier not in plan_configs:
+                messages.error(request, 'Invalid staff plan tier.')
+                return redirect('admin_users')
+            
+            config = plan_configs[plan_tier]
+            old_plan_info = f"{staff_profile.max_clients} TVs"
+            
+            # Update staff profile
+            staff_profile.max_clients = config['max_clients']
+            staff_profile.max_storage_gb = config['max_storage_gb']
+            staff_profile.can_use_cloud = config['can_use_cloud']
+            staff_profile.save()
+            
+            messages.success(request, f'Staff plan upgraded to {config["display_name"]} for {user.email}.')
+            
+            # Log action
+            AdminActionLog.objects.create(
+                admin=request.user,
+                action_type="PLAN_CHANGED",
+                target_model="StaffProfile",
+                target_id=str(staff_profile.id),
+                description=f"Changed staff plan from {old_plan_info} to {config['display_name']}"
+            )
+            
+        except Exception as e:
+            messages.error(request, f'Error updating staff plan: {str(e)}')
+            
+    return redirect('admin_users')
+
+
+@never_cache
+@login_required
 def admin_upload_video_global(request):
     """Upload a global video visible to all users."""
     if not request.user.is_admin:

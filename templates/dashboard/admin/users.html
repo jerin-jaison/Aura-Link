@@ -32,6 +32,7 @@
                             <th>Username</th>
                             <th>Plan</th>
                             <th>Role</th>
+                            <th>Type</th>
                             <th>Videos</th>
                             <th>Storage</th>
                             <th>Status</th>
@@ -52,6 +53,19 @@
                                 <span class="badge bg-danger">ADMIN</span>
                                 {% else %}
                                 <span class="badge bg-secondary">USER</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.user_type == 'STAFF' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-briefcase"></i> Staff
+                                </span>
+                                {% elif user.user_type == 'CLIENT' %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-tv"></i> Client
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Regular</span>
                                 {% endif %}
                             </td>
                             <td>{{ user.total_videos }}</td>
@@ -82,9 +96,60 @@
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
+                                        <!-- Toggle Staff Status -->
                                         <li>
-                                            <h6 class="dropdown-header">Change Plan</h6>
+                                            <a class="dropdown-item {% if user.user_type == 'STAFF' %}text-danger{% else %}text-warning{% endif %}"
+                                                href="{% url 'admin_user_toggle_staff' user.id %}">
+                                                <i
+                                                    class="bi {% if user.user_type == 'STAFF' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %}"></i>
+                                                {% if user.user_type == 'STAFF' %}Demote from Staff{% else %}Promote to
+                                                Staff{% endif %}
+                                            </a>
                                         </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <h6 class="dropdown-header">
+                                                {% if user.user_type == 'STAFF' %}Staff Plans{% else %}Change Plan{%
+                                                endif %}
+                                            </h6>
+                                        </li>
+
+                                        {% if user.user_type == 'STAFF' %}
+                                        <!-- Staff Plan Options -->
+                                        <li>
+                                            <form method="post"
+                                                action="{% url 'admin_user_change_staff_plan' user.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="plan_tier" value="free">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-arrow-down-circle"></i> Staff Free (2 TVs, 5GB)
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form method="post"
+                                                action="{% url 'admin_user_change_staff_plan' user.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="plan_tier" value="basic">
+                                                <button type="submit" class="dropdown-item text-primary">
+                                                    <i class="bi bi-arrow-up-circle"></i> Staff Basic (10 TVs, 50GB)
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form method="post"
+                                                action="{% url 'admin_user_change_staff_plan' user.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="plan_tier" value="pro">
+                                                <button type="submit" class="dropdown-item text-warning">
+                                                    <i class="bi bi-star-fill"></i> Staff Pro (50 TVs, 200GB)
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% else %}
+                                        <!-- Regular User Plan Options -->
                                         <li>
                                             <form method="post" action="{% url 'admin_user_change_plan' user.id %}">
                                                 {% csrf_token %}
@@ -95,6 +160,7 @@
                                             </form>
                                         </li>
                                         <li>
+                                            {% endif %}
                                             <form method="post" action="{% url 'admin_user_change_plan' user.id %}">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="plan_name" value="Premium">
@@ -103,6 +169,7 @@
                                                 </button>
                                             </form>
                                         </li>
+                                        {% endif %}
                                         <li>
                                             <a class="dropdown-item" href="{% url 'admin_upload_video_user' user.id %}">
                                                 <i class="bi bi-cloud-upload"></i> Upload Video

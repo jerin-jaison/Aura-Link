@@ -49,6 +49,32 @@
         </div>
     </div>
 
+    <!-- Staff Upgrade Prompt (for regular users) -->
+    {% if user.user_type == 'REGULAR' %}
+    <div class="alert alert-warning mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2">
+                    <i class="bi bi-briefcase-fill"></i> Upgrade to Staff Account
+                </h5>
+                <p class="mb-0">
+                    Manage multiple client devices, control what they display, and turn any TV into a digital signage
+                    display!
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <form method="post" action="{% url 'switch_account_type' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="new_type" value="STAFF">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-up-circle"></i> Become Staff Member
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Video Grid -->
     <div class="card bg-dark border-secondary">
         <div class="card-header d-flex justify-content-between align-items-center">

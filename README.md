@@ -240,3 +240,7 @@ For issues or questions, contact: jerinjaison07@gmail.com
 ---
 
 **Built with ❤️ for real-world production use.**
+
+cd videosaas
+venv\Scripts\activate 
+python manage.py runserver 

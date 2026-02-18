@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Choose Plan - Staff Portal{% endblock %}
+
+{% block navbar %}
+{% include 'partials/staff_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h2><i class="bi bi-star-fill text-warning"></i> Choose Your Staff Plan</h2>
+            <p class="text-muted">Select the plan that best fits your business needs</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Staff Free -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-header bg-secondary text-center">
+                    <h4 class="mb-0">Staff Free</h4>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-4">
+                        <h2 class="display-4">₹0</h2>
+                        <p class="text-muted">per month</p>
+                    </div>
+
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 2 Client Devices
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 5 GB Storage
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 5 Videos
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-x-circle text-danger"></i> Local Storage Only
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Basic Support
+                        </li>
+                    </ul>
+
+                    <button class="btn btn-secondary w-100" disabled>
+                        Current Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Basic -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-primary h-100">
+                <div class="card-header bg-primary text-center">
+                    <h4 class="mb-0">Staff Basic</h4>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-4">
+                        <h2 class="display-4">₹999</h2>
+                        <p class="text-muted">per month</p>
+                    </div>
+
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 10 Client Devices
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 50 GB Cloud Storage
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Unlimited Videos
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Cloud Upload
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Priority Support
+                        </li>
+                    </ul>
+
+                    <button class="btn btn-primary w-100">
+                        <i class="bi bi-arrow-up-circle"></i> Upgrade
+                    </button>
+                    <small class="text-center text-muted mt-2">Payment integration coming soon</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Pro -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h4 class="mb-0">Staff Pro</h4>
+                    <small>MOST POPULAR</small>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-4">
+                        <h2 class="display-4 text-warning">₹2,499</h2>
+                        <p class="text-muted">per month</p>
+                    </div>
+
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 50 Client Devices
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 200 GB Cloud Storage
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Unlimited Videos
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Cloud Upload
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> 24/7 Premium Support
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> Analytics Dashboard
+                        </li>
+                    </ul>
+
+                    <button class="btn btn-warning w-100">
+                        <i class="bi bi-arrow-up-circle"></i> Upgrade
+                    </button>
+                    <small class="text-center text-muted mt-2">Payment integration coming soon</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Note -->
+    <div class="alert alert-info mt-5">
+        <i class="bi bi-info-circle"></i>
+        <strong>Note:</strong> Payment integration and automatic plan upgrades will be implemented in Phase 6.
+        For now, contact admin to upgrade your plan.
+    </div>
+</div>
+{% endblock %}

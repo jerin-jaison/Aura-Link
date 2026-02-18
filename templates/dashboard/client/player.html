@@ -1,0 +1,457 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Player - Aura Link</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        /* Hide controls in fullscreen mode */
+        #playerContainer:fullscreen #controlsOverlay,
+        #playerContainer:-webkit-full-screen #controlsOverlay,
+        #playerContainer:-moz-full-screen #controlsOverlay,
+        #playerContainer:-ms-fullscreen #controlsOverlay {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid p-0" style="height: 100vh; overflow: hidden; background: #000;">
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="d-flex align-items-center justify-content-center" style="height: 100vh;">
+            <div class="text-center">
+                <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h3 class="mt-4 text-white">Loading Aura Link Player...</h3>
+                <p class="text-muted">Please wait</p>
+            </div>
+        </div>
+
+        <!-- Video Player Container -->
+        <div id="playerContainer" style="display: none; width: 100vw; height: 100vh; position: relative;">
+            <video id="videoPlayer" style="width: 100%; height: 100%; object-fit: contain; background: #000;"
+                preload="auto" playsinline>
+                Your browser does not support video playback.
+            </video>
+
+            <!-- Info Overlay (Hidden during playback, shown on errors) -->
+            <div id="infoOverlay"
+                class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex align-items-center justify-content-center"
+                style="display: none !important;">
+                <div class="text-center text-white p-5">
+                    <i class="bi bi-tv-fill" style="font-size: 5rem;"></i>
+                    <h2 class="mt-4" id="infoTitle">No Videos Assigned</h2>
+                    <p class="lead" id="infoMessage">Please contact your administrator to assign videos to this device.
+                    </p>
+                    <p class="text-muted mt-4">Device: <span id="deviceName">Loading...</span></p>
+                </div>
+            </div>
+            <!-- Logout & Fullscreen Controller -->
+            <div id="controlsOverlay" class="position-absolute bottom-0 end-0 p-4 d-flex gap-3"
+                style="z-index: 2147483647; opacity: 0.5; transition: opacity 0.3s;">
+
+                <button onclick="toggleFullscreen()" class="btn btn-outline-light btn-sm rounded-circle p-3"
+                    title="Toggle Fullscreen"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.3);">
+                    <i class="bi bi-arrows-fullscreen fs-4"></i>
+                </button>
+
+                <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm rounded-circle p-3" title="Logout"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.3);">
+                    <i class="bi bi-power fs-4"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ============================================================================
+        // AURA LINK CLIENT AUTO-PLAY SYSTEM
+        // ============================================================================
+
+        const CONFIG = {
+            PLAYLIST_API_URL: '/api/client/playlist/',
+            HEARTBEAT_API_URL: '/api/client/heartbeat/',
+            HEARTBEAT_INTERVAL: 60000, // 1 minute
+            RETRY_DELAY: 5000, // 5 seconds on error
+            CSRF_TOKEN: '{{ csrf_token }}',
+        };
+
+        let playlist = [];
+        let currentIndex = 0;
+        let loopMode = 'playlist'; // 'playlist', 'single', 'none'
+        let heartbeatInterval = null;
+
+        const videoPlayer = document.getElementById('videoPlayer');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const playerContainer = document.getElementById('playerContainer');
+        const infoOverlay = document.getElementById('infoOverlay');
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        async function init() {
+            console.log('[Aura Link] Initializing player...');
+
+            try {
+                // Fetch playlist from server
+                await fetchPlaylist();
+
+                // Start heartbeat
+                startHeartbeat();
+
+                // Setup video event listeners
+                setupVideoPlayer();
+
+                // Start playing
+                if (playlist.length > 0) {
+                    playVideo(0);
+                } else {
+                    hideLoading(); // Ensure container is visible
+                    showInfo('Video Not Available', 'Video not uploaded yet. Please contact your administrator.');
+                }
+
+            } catch (error) {
+                console.error('[Aura Link] Initialization error:', error);
+                showInfo('Connection Error', 'Unable to load playlist. Retrying in 5 seconds...');
+                setTimeout(init, CONFIG.RETRY_DELAY);
+            }
+        }
+
+        // ============================================================================
+        // API FUNCTIONS
+        // ============================================================================
+
+        async function fetchPlaylist() {
+            console.log('[Aura Link] Fetching playlist...');
+
+            const response = await fetch(CONFIG.PLAYLIST_API_URL, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': CONFIG.CSRF_TOKEN,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Unknown error');
+            }
+
+            playlist = data.playlist;
+            loopMode = data.loop_mode || 'playlist';
+
+            console.log(`[Aura Link] Loaded ${playlist.length} videos`);
+            console.log(`[Aura Link] Loop mode: ${loopMode}`);
+
+            // Update device name in overlay
+            if (data.client && data.client.device_name) {
+                document.getElementById('deviceName').textContent = data.client.device_name;
+            }
+
+            return data;
+        }
+
+        async function sendHeartbeat() {
+            try {
+                const response = await fetch(CONFIG.HEARTBEAT_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': CONFIG.CSRF_TOKEN,
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (response.ok) {
+                    console.log('[Aura Link] Heartbeat sent successfully');
+                }
+            } catch (error) {
+                console.error('[Aura Link] Heartbeat failed:', error);
+            }
+        }
+
+        function startHeartbeat() {
+            // Send initial heartbeat
+            sendHeartbeat();
+
+            // Setup interval
+            heartbeatInterval = setInterval(sendHeartbeat, CONFIG.HEARTBEAT_INTERVAL);
+            console.log(`[Aura Link] Heartbeat started (every ${CONFIG.HEARTBEAT_INTERVAL / 1000}s)`);
+        }
+
+        // ============================================================================
+        // VIDEO PLAYER FUNCTIONS
+        // ============================================================================
+
+        function setupVideoPlayer() {
+            // Auto-advance to next video when current one ends
+            videoPlayer.addEventListener('ended', () => {
+                console.log('[Aura Link] Video ended');
+                handleVideoEnd();
+            });
+
+            // Error handling
+            videoPlayer.addEventListener('error', (e) => {
+                console.error('[Aura Link] Video error:', e);
+                showInfo('Playback Error', 'Unable to play video. Skipping to next...');
+                setTimeout(() => handleVideoEnd(), 2000);
+            });
+
+            // Log when video starts playing
+            videoPlayer.addEventListener('playing', () => {
+                console.log(`[Aura Link] Playing: ${playlist[currentIndex]?.title}`);
+                hideLoading();
+                hideInfo();
+            });
+
+            // Show loading while buffering
+            videoPlayer.addEventListener('waiting', () => {
+                console.log('[Aura Link] Buffering...');
+            });
+        }
+
+        function playVideo(index) {
+            if (playlist.length === 0) {
+                showInfo('No Videos', 'No videos in playlist');
+                return;
+            }
+
+            // Wrap index
+            if (index < 0) index = playlist.length - 1;
+            if (index >= playlist.length) index = 0;
+
+            currentIndex = index;
+            const video = playlist[currentIndex];
+
+            console.log(`[Aura Link] Loading video ${index + 1}/${playlist.length}: ${video.title}`);
+
+            // Apply rotation using CSS transform
+            applyRotation(video.rotation);
+
+            // Set video source
+            videoPlayer.src = video.url;
+
+            // Attempt to play
+            const playPromise = videoPlayer.play();
+
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        console.log('[Aura Link] Playback started');
+                        enterFullscreen();
+                    })
+                    .catch(error => {
+                        console.error('[Aura Link] Autoplay prevented:', error);
+                        // User interaction required - use Loading Screen as "Click to Play"
+                        const spinner = loadingScreen.querySelector('.spinner-border');
+                        const title = loadingScreen.querySelector('h3');
+                        const desc = loadingScreen.querySelector('p');
+
+                        if (spinner) spinner.style.display = 'none';
+                        if (title) title.textContent = 'Tap to Start';
+                        if (desc) desc.textContent = 'Playback requires interaction';
+
+                        loadingScreen.style.cursor = 'pointer';
+
+                        // One-time click listener on the entire screen
+                        const startPlay = () => {
+                            videoPlayer.play();
+                            enterFullscreen();
+                            loadingScreen.removeEventListener('click', startPlay);
+                            loadingScreen.style.cursor = 'default';
+                            // Restore loading text for next time (optional)
+                            if (spinner) spinner.style.display = 'inline-block';
+                            if (title) title.textContent = 'Loading...';
+                        };
+
+                        loadingScreen.addEventListener('click', startPlay);
+                    });
+            }
+        }
+
+        function handleVideoEnd() {
+            console.log(`[Aura Link] Handling video end (mode: ${loopMode})`);
+
+            switch (loopMode) {
+                case 'single':
+                    // Loop current video
+                    playVideo(currentIndex);
+                    break;
+
+                case 'playlist':
+                    // Play next video (loop playlist)
+                    playVideo(currentIndex + 1);
+                    break;
+
+                case 'none':
+                    // Play next if available, otherwise stop
+                    if (currentIndex < playlist.length - 1) {
+                        playVideo(currentIndex + 1);
+                    } else {
+                        console.log('[Aura Link] Playlist finished');
+                        showInfo('Playlist Complete', 'All videos played');
+                    }
+                    break;
+
+                default:
+                    // Default to playlist loop
+                    playVideo(currentIndex + 1);
+            }
+        }
+
+        function applyRotation(degrees) {
+            const container = document.getElementById('playerContainer');
+            const rotation = parseInt(degrees) || 0;
+
+            console.log(`[Aura Link] Applying rotation: ${rotation}°`);
+
+            // Remove previous rotation classes
+            container.classList.remove('rotate-0', 'rotate-90', 'rotate-180', 'rotate-270');
+
+            // Apply rotation transform
+            switch (rotation) {
+                case 90:
+                    videoPlayer.style.transform = 'rotate(90deg)';
+                    container.style.width = '100vh';
+                    container.style.height = '100vw';
+                    break;
+                case 180:
+                    videoPlayer.style.transform = 'rotate(180deg)';
+                    break;
+                case 270:
+                    videoPlayer.style.transform = 'rotate(270deg)';
+                    container.style.width = '100vh';
+                    container.style.height = '100vw';
+                    break;
+                default:
+                    videoPlayer.style.transform = 'none';
+                    container.style.width = '100vw';
+                    container.style.height = '100vh';
+            }
+        }
+
+        function toggleFullscreen() {
+            const elem = document.getElementById('playerContainer');
+
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => {
+                        console.log('[Aura Link] Fullscreen request failed:', err);
+                    });
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function enterFullscreen() {
+            // Use the player container for fullscreen so footer/header are excluded
+            const elem = document.getElementById('playerContainer');
+
+            if (elem.requestFullscreen && !document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => {
+                    console.log('[Aura Link] Fullscreen request failed:', err);
+                });
+            }
+        }
+
+        // ============================================================================
+        // UI FUNCTIONS
+        // ============================================================================
+
+        function hideLoading() {
+            console.log('[Aura Link] Hiding loading screen');
+            loadingScreen.style.setProperty('display', 'none', 'important');
+            loadingScreen.classList.remove('d-flex');
+
+            playerContainer.style.display = 'block';
+            videoPlayer.style.display = 'block';
+        }
+
+        function showInfo(title, message) {
+            document.getElementById('infoTitle').textContent = title;
+            document.getElementById('infoMessage').textContent = message;
+            infoOverlay.style.display = 'flex !important';
+            infoOverlay.style.setProperty('display', 'flex', 'important');
+        }
+
+        function hideInfo() {
+            infoOverlay.style.display = 'none !important';
+            infoOverlay.style.setProperty('display', 'none', 'important');
+        }
+
+        // ============================================================================
+        // AUTO-START ON PAGE LOAD
+        // ============================================================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('[Aura Link] Page loaded - starting player');
+            init();
+
+            // Activity Monitor for Controls
+            let activityTimeout;
+            const controls = document.getElementById('controlsOverlay');
+
+            function showControls() {
+                // Hide controls if in fullscreen mode (as per request)
+                if (document.fullscreenElement) {
+                    controls.style.opacity = '0';
+                    return;
+                }
+
+                controls.style.opacity = '1';
+                clearTimeout(activityTimeout);
+                activityTimeout = setTimeout(() => {
+                    controls.style.opacity = '0.5'; // Return to dim 
+                }, 3000);
+            }
+
+            document.addEventListener('mousemove', showControls);
+            document.addEventListener('touchstart', showControls);
+            document.addEventListener('click', showControls);
+
+            // Initial state
+            showControls();
+        });
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', (e) => {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+        });
+
+        console.log('[Aura Link] Client Player Script Loaded');
+    </script>
+</body>
+
+</html>

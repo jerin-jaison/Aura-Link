@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Staff Portal{% endblock %}
+
+{% block navbar %}
+{% include 'partials/staff_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-gear-fill"></i> Settings</h2>
+            <p class="text-muted">Manage your account and subscription</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Plan -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-star-fill"></i> Current Plan</h5>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-warning">Staff Free</h4>
+                    <p class="text-muted">₹0 / month</p>
+
+                    <hr class="border-secondary">
+
+                    <h6 class="mb-3">Plan Limits:</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-tv text-primary"></i>
+                            <strong>{{ staff_profile.max_clients }} Client Devices</strong>
+                            <br><small class="text-muted">{{ staff_profile.active_clients_count }} in use</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-hdd text-info"></i>
+                            <strong>{{ staff_profile.max_storage_gb }} GB Storage</strong>
+                            <br><small class="text-muted">{{ staff_profile.storage_used_gb }} GB used</small>
+                        </li>
+                        <li class="mb-2">
+                            {% if staff_profile.can_use_cloud %}
+                            <i class="bi bi-cloud-check text-success"></i>
+                            <strong>Cloud Upload Enabled</strong>
+                            {% else %}
+                            <i class="bi bi-cloud-slash text-danger"></i>
+                            <strong>Local Storage Only</strong>
+                            {% endif %}
+                        </li>
+                    </ul>
+
+                    <a href="{% url 'staff_plans' %}" class="btn btn-warning w-100 mt-3">
+                        <i class="bi bi-arrow-up-circle"></i> Upgrade Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Email</label>
+                        <p class="mb-0">{{ user.email }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Username</label>
+                        <p class="mb-0">{{ user.username }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Account Type</label>
+                        <p class="mb-0">
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-briefcase"></i> Staff Member
+                            </span>
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Member Since</label>
+                        <p class="mb-0">{{ user.date_joined|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Type Switching -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark border-warning">
+                <div class="card-header border-warning">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Switch Account Type</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Change between Staff and Regular user account types.
+                    </p>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Current Type:</strong>
+                        <span class="badge bg-warning text-dark ms-1">
+                            <i class="bi bi-briefcase"></i> Staff Member
+                        </span>
+                    </div>
+
+                    <form method="post" action="{% url 'switch_account_type' %}"
+                        onsubmit="return confirm('Are you sure you want to switch to a Regular user account? You will lose access to staff features.')">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_type" value="REGULAR">
+                        <button type="submit" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-arrow-left-right"></i> Switch to Regular User
+                        </button>
+                    </form>
+
+                    <hr class="border-secondary my-3">
+
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Switching to Regular user will:
+                        <ul class="mt-2 mb-0">
+                            <li>Deactivate all client connections</li>
+                            <li>Keep your uploaded videos</li>
+                            <li>Remove staff-specific features</li>
+                            <li>You can switch back anytime</li>
+                        </ul>
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Statistics -->
+        <div class="col-12 mb-4">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Usage Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border border-secondary rounded">
+                                <h2 class="text-primary">{{ clients_count }}</h2>
+                                <p class="text-muted mb-0">Active Clients</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border border-secondary rounded">
+                                <h2 class="text-success">{{ videos_count }}</h2>
+                                <p class="text-muted mb-0">Total Videos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border border-secondary rounded">
+                                <h2 class="text-warning">{{ codes_count }}</h2>
+                                <p class="text-muted mb-0">Access Codes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 border border-secondary rounded">
+                                <h2 class="text-info">{{ staff_profile.storage_used_gb }} GB</h2>
+                                <p class="text-muted mb-0">Storage Used</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

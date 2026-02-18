@@ -11,30 +11,28 @@ User = get_user_model()
 
 class EmailOrUsernameBackend(ModelBackend):
     """
-    Custom authentication backend that allows users to log in with either
-    their email address or username.
+    Custom authentication backend that allows users to log in with 
+    username or mobile number.
     """
     
     def authenticate(self, request, username=None, password=None, **kwargs):
         """
-        Authenticate a user using email or username.
-        
-        Args:
-            request: The HTTP request object
-            username: The email or username provided by the user
-            password: The password provided by the user
-            
-        Returns:
-            User object if authentication succeeds, None otherwise
+        Authenticate a user using username or mobile number.
         """
         if username is None or password is None:
             return None
         
         try:
-            # Try to find user by email or username
-            user = User.objects.get(
-                Q(email__iexact=username) | Q(username__iexact=username)
-            )
+            # Try to find user by mobile number or username
+            # Note: User request explicitly asked to disable email login
+            # Check for standard username, mobile number, or normalized mobile (+91)
+            query = Q(mobile_number=username) | Q(username__iexact=username)
+            
+            # If the input looks like a 10-digit number, also check for +91 version
+            if username.isdigit() and len(username) == 10:
+                query |= Q(mobile_number=f"+91{username}")
+
+            user = User.objects.get(query)
             
             # Check password
             if user.check_password(password):
@@ -45,7 +43,6 @@ class EmailOrUsernameBackend(ModelBackend):
             User().set_password(password)
             return None
         except User.MultipleObjectsReturned:
-            # This shouldn't happen with unique constraints, but handle it anyway
             return None
         
         return None
